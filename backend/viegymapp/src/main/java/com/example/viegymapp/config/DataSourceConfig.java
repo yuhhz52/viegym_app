@@ -23,6 +23,12 @@ public class DataSourceConfig {
     @Value("${DATABASE_URL:}")
     private String databaseUrl;
 
+    @Value("${DB_USERNAME:}")
+    private String dbUsername;
+
+    @Value("${DB_PASSWORD:}")
+    private String dbPassword;
+
     @Value("${spring.datasource.hikari.maximum-pool-size:10}")
     private int maximumPoolSize;
 
@@ -46,19 +52,22 @@ public class DataSourceConfig {
         // Chuyển đổi DATABASE_URL từ Render sang JDBC URL
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
             URI dbUri = new URI(databaseUrl);
-            
-            String username = dbUri.getUserInfo().split(":")[0];
-            String password = dbUri.getUserInfo().split(":")[1];
+
             String host = dbUri.getHost();
-            int port = dbUri.getPort() == -1 ? 5432 : dbUri.getPort(); // Default PostgreSQL port
-            String dbName = dbUri.getPath().substring(1); // Bỏ dấu / đầu tiên
-
-            // Tạo JDBC URL đúng định dạng
+            int port = dbUri.getPort() == -1 ? 5432 : dbUri.getPort();
+            String dbName = dbUri.getPath().substring(1);
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s", host, port, dbName);
-
             config.setJdbcUrl(jdbcUrl);
-            config.setUsername(username);
-            config.setPassword(password);
+
+            // Ưu tiên credentials từ URL, fallback sang DB_USERNAME/DB_PASSWORD
+            String userInfo = dbUri.getUserInfo();
+            if (userInfo != null && !userInfo.isEmpty()) {
+                config.setUsername(userInfo.split(":")[0]);
+                config.setPassword(userInfo.contains(":") ? userInfo.split(":", 2)[1] : "");
+            } else if (dbUsername != null && !dbUsername.isEmpty()) {
+                config.setUsername(dbUsername);
+                config.setPassword(dbPassword);
+            }
         }
 
         // Cấu hình HikariCP

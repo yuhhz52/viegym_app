@@ -6,6 +6,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,6 +34,9 @@ public class RabbitMQConfig {
     public static final String NOTIFICATION_QUEUE = "notification.queue";
     public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
     public static final String NOTIFICATION_ROUTING_KEY = "notification.event";
+
+    @Value("${app.rabbitmq.listeners-enabled:true}")
+    private boolean listenersEnabled;
 
     @Bean
     public Queue commentQueue() {
@@ -135,6 +139,7 @@ public class RabbitMQConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jacksonMessageConverter());
+        factory.setAutoStartup(listenersEnabled);
         factory.setDefaultRequeueRejected(false); // Don't requeue failed messages
         return factory;
     }

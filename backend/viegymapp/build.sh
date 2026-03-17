@@ -13,7 +13,7 @@ if ! command -v mvn &> /dev/null; then
 fi
 
 # Clean and build the application
-echo "📦 Building application..."
+echo " Building application..."
 ./mvnw clean package -DskipTests
 
-echo "✅ Build completed successfully!"
+echo " Build completed successfully!"

@@ -35,13 +35,14 @@ spring:
               - email
               - profile
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
-    stomp:
-      port: 61613
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:false}
+      algorithm: TLSv1.2
   mail:
     host: smtp.gmail.com
     port: 587
@@ -75,6 +76,8 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET}
 
 app:
+  rabbitmq:
+    listeners-enabled: false
   super-admin:
     email: ${SUPER_ADMIN_EMAIL:huyadmin@gmail.com}
     password: ${SUPER_ADMIN_PASSWORD:123456}
