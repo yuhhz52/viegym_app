@@ -6,6 +6,7 @@ import com.example.viegymapp.dto.response.MessageResponse;
 import com.example.viegymapp.dto.response.TokenRefreshResponse;
 import com.example.viegymapp.dto.response.UserInfoResponse;
 import com.example.viegymapp.entity.RefreshToken;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.RefreshTokenRepository;
@@ -142,7 +143,7 @@ public class AuthService {
                    && !refreshRequest.getRefreshToken().isEmpty()) {
             refreshToken = refreshRequest.getRefreshToken();
         } else {
-            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+            throw new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED);
         }
 
         return refreshTokenService.findByToken(refreshToken)
@@ -173,10 +174,10 @@ public class AuthService {
                     } catch (AppException e) {
                         throw e;
                     } catch (Exception e) {
-                        throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+                        throw new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED);
                     }
                 })
-                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_REFRESH_FAILED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED));
     }
 
     /**
@@ -188,12 +189,12 @@ public class AuthService {
         String accessToken = jwtUtils.getJwtFromCookies(request);
         
         if (accessToken == null || accessToken.isEmpty()) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         // Validate token
         if (!jwtUtils.validateJwtToken(accessToken)) {
-            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+            throw new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED);
         }
         
         // Trả về token (chỉ dùng cho WebSocket)

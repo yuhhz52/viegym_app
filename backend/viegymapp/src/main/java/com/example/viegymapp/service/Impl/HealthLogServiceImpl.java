@@ -4,6 +4,7 @@ import com.example.viegymapp.dto.request.HealthLogRequest;
 import com.example.viegymapp.dto.response.HealthLogResponse;
 import com.example.viegymapp.entity.HealthLog;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.HealthLogMapper;
@@ -45,7 +46,7 @@ public class HealthLogServiceImpl implements HealthLogService {
     @Override
     public HealthLogResponse updateHealthLog(UUID id, HealthLogRequest request) {
         HealthLog existing = healthLogRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.HEALTH_LOG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.HEALTH_LOG_NOT_FOUND));
 
         mapper.updateEntity(existing, request);
         return mapper.toResponse(healthLogRepo.save(existing));
@@ -54,7 +55,7 @@ public class HealthLogServiceImpl implements HealthLogService {
     @Override
     public void deleteHealthLog(UUID id) {
         if (!healthLogRepo.existsById(id)) {
-            throw new AppException(ErrorCode.HEALTH_LOG_NOT_FOUND);
+            throw new BusinessException(ErrorCode.HEALTH_LOG_NOT_FOUND);
         }
         healthLogRepo.deleteById(id);
     }
@@ -63,6 +64,6 @@ public class HealthLogServiceImpl implements HealthLogService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepo.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 }

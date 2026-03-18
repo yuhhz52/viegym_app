@@ -4,6 +4,7 @@ import com.example.viegymapp.dto.request.CreatePaymentRequest;
 import com.example.viegymapp.dto.response.ApiResponse;
 import com.example.viegymapp.dto.response.PaymentResponse;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.UserRepository;
@@ -39,7 +40,7 @@ public class PaymentController {
         String email = authentication.getName();
         
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         String ipAddress = httpRequest.getRemoteAddr();
         PaymentResponse response = paymentService.createVNPayPayment(request, user.getId(), ipAddress);
@@ -108,7 +109,7 @@ public class PaymentController {
         String email = authentication.getName();
         
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         List<PaymentResponse> responses = paymentService.getUserPayments(user.getId());
         

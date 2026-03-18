@@ -10,6 +10,7 @@ import com.example.viegymapp.entity.Exercise;
 import com.example.viegymapp.entity.ExerciseMedia;
 import com.example.viegymapp.entity.Tag;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.ExerciseMapper;
@@ -107,21 +108,21 @@ public class ExerciseServiceImpl implements ExerciseService {
         try {
             return DifficultyLevel.valueOf(difficulty.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_PARAMETER);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PARAMETER);
         }
     }
 
     @Override
     public ExerciseResponse getExerciseById(UUID id) {
         Exercise exercise = exerciseRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EXERCISE_NOT_FOUND));
         return exerciseMapper.toResponseDTO(exercise);
     }
 
     @Override
     public ExerciseResponse createExercise(ExerciseRequest createRequest) {
         if (createRequest == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_PARAMETER);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PARAMETER);
         }
 
         Exercise exercise = exerciseMapper.toEntity(createRequest);
@@ -195,10 +196,10 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Override
     public ExerciseResponse updateExercise(UUID id, ExerciseRequest updateRequest) {
         Exercise exercise = exerciseRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EXERCISE_NOT_FOUND));
 
         if (updateRequest == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_PARAMETER);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PARAMETER);
         }
 
         // Update các field cơ bản
@@ -279,13 +280,13 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Override
     public List<ExerciseMediaResponse> getMedia(UUID exerciseId) {
         if (!exerciseRepository.existsById(exerciseId)) {
-            throw new AppException(ErrorCode.EXERCISE_NOT_FOUND);
+            throw new BusinessException(ErrorCode.EXERCISE_NOT_FOUND);
         }
 
         List<ExerciseMedia> mediaList = exerciseMediaRepository.findByExerciseId(exerciseId);
 
         if (mediaList.isEmpty()) {
-            throw new AppException(ErrorCode.MEDIA_NOT_FOUND);
+            throw new BusinessException(ErrorCode.MEDIA_NOT_FOUND);
         }
 
         // Map sang DTO bằng MapStruct
@@ -299,10 +300,10 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Override
     public ExerciseMediaResponse addMedia(UUID exerciseId, ExerciseMediaRequest mediaCreateRequest) {
         Exercise exercise = exerciseRepository.findById(exerciseId)
-                .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EXERCISE_NOT_FOUND));
 
         if (mediaCreateRequest == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_PARAMETER);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PARAMETER);
         }
 
         ExerciseMedia media = exerciseMediaMapper.toEntity(mediaCreateRequest);
@@ -316,7 +317,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     @Override
     public void deleteMedia(UUID mediaId) {
         ExerciseMedia media = exerciseMediaRepository.findById(mediaId)
-                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         exerciseMediaRepository.delete(media);
     }
 

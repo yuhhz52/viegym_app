@@ -7,6 +7,7 @@ import com.example.viegymapp.dto.response.NotificationResponse;
 import com.example.viegymapp.entity.Notification;
 import com.example.viegymapp.entity.NotificationPreference;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.NotificationMapper;
@@ -55,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationResponse createNotification(UUID userId, NotificationRequest request) {
         User user = userRepo.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         Notification notification = notificationMapper.toEntity(request);
         notification.setUser(user);
@@ -98,10 +99,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationResponse markAsRead(UUID notificationId, UUID userId) {
         Notification notification = notificationRepo.findById(notificationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
         
         if (!notification.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         notification.setIsRead(true);
@@ -119,10 +120,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void deleteNotification(UUID notificationId, UUID userId) {
         Notification notification = notificationRepo.findById(notificationId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
         
         if (!notification.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         notificationRepo.delete(notification);
@@ -251,7 +252,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendEmailNotification(UUID userId, Notification notification) {
         try {
             User user = userRepo.findById(userId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
             
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -298,7 +299,7 @@ public class NotificationServiceImpl implements NotificationService {
         return preferenceRepo.findByUserId(userId)
                 .orElseGet(() -> {
                     User user = userRepo.findById(userId)
-                            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
                     NotificationPreference prefs = NotificationPreference.builder()
                             .user(user)
                             .emailEnabled(true)

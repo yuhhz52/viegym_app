@@ -1,6 +1,7 @@
 package com.example.viegymapp.service.Impl;
 
 import com.example.viegymapp.entity.*;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.BookingSessionRepository;
@@ -111,7 +112,7 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
         User coach = booking.getCoach();
         
         CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         // Find transactions for this booking session (PENDING or COMPLETED but money still in pendingBalance)
         // Note: Transaction might be COMPLETED (from confirmPaymentSuccess) but money still in pendingBalance
@@ -183,7 +184,7 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
         
         // Verify with coach balance entity
         CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         BigDecimal entityBalance = balance.getAvailableBalance().add(balance.getPendingBalance());
         log.info("Balance from entity: Available={}, Pending={}, Total={}", 
@@ -291,7 +292,7 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
         User coach = payment.getBookingSession().getCoach();
         
         CoachBalance balance = coachBalanceRepository.findByCoachId(coach.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         // Find the pending transaction for this payment
         CoachTransaction pendingTransaction = coachTransactionRepository.findByPaymentId(payment.getId())
@@ -396,7 +397,7 @@ public class CoachBalanceServiceImpl implements CoachBalanceService {
     public void initializeCoachBalance(UUID coachId) {
         if (!coachBalanceRepository.existsByCoachId(coachId)) {
             User coach = userRepository.findById(coachId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
             
             CoachBalance balance = CoachBalance.builder()
                     .coach(coach)

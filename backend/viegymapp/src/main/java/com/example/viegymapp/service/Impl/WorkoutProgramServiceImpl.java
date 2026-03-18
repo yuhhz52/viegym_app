@@ -8,6 +8,7 @@ import com.example.viegymapp.dto.response.ProgramRatingResponse;
 import com.example.viegymapp.dto.response.ProgramStatsResponse;
 import com.example.viegymapp.dto.response.WorkoutProgramResponse;
 import com.example.viegymapp.entity.*;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.ProgramExerciseMapper;
@@ -131,14 +132,14 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
     @Override
     public WorkoutProgramResponse getProgramById(UUID id) {
         return programRepo.findById(id)
                 .map(programMapper::toResponse)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND));
     }
 
     @Override
@@ -202,7 +203,7 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Override
     public WorkoutProgramResponse updateProgram(UUID id, WorkoutProgramRequest request) {
         WorkoutProgram existing = programRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND));
 
         WorkoutProgram updated = existing.toBuilder()
                 .title(request.getTitle())
@@ -239,7 +240,7 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Transactional
     public void deleteProgram(UUID id) {
         if (!programRepo.existsById(id)) {
-            throw new AppException(ErrorCode.PROGRAM_NOT_FOUND);
+            throw new BusinessException(ErrorCode.PROGRAM_NOT_FOUND);
         }
         
         // Delete related data first to avoid foreign key constraint violations
@@ -262,9 +263,9 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Override
     public ProgramExerciseResponse addExerciseToProgram(UUID programId, ProgramExerciseRequest request) {
         WorkoutProgram program = programRepo.findById(programId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND));
         Exercise exercise = exerciseRepo.findById(UUID.fromString(request.getExerciseId()))
-                .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EXERCISE_NOT_FOUND));
 
         ProgramExercise pe = ProgramExercise.builder()
                 .program(program)
@@ -284,7 +285,7 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Override
     public ProgramExerciseResponse updateProgramExercise(UUID programExerciseId, ProgramExerciseRequest request) {
         ProgramExercise existing = programExerciseRepo.findById(programExerciseId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_EXERCISE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_EXERCISE_NOT_FOUND));
 
         ProgramExercise updated = existing.toBuilder()
                 .dayOfProgram(request.getDayOfProgram())
@@ -302,7 +303,7 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Override
     public void deleteProgramExercise(UUID programExerciseId) {
         if (!programExerciseRepo.existsById(programExerciseId)) {
-            throw new AppException(ErrorCode.PROGRAM_EXERCISE_NOT_FOUND);
+            throw new BusinessException(ErrorCode.PROGRAM_EXERCISE_NOT_FOUND);
         }
         programExerciseRepo.deleteById(programExerciseId);
     }
@@ -332,10 +333,10 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Transactional
     public ProgramRatingResponse rateProgram(UUID programId, UUID userId, ProgramRatingRequest request) {
         WorkoutProgram program = programRepo.findById(programId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND));
         
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         // Check if user already rated this program
         ProgramRating rating = ratingRepo.findByProgramIdAndUserId(programId, userId)
@@ -381,7 +382,7 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
     @Override
     public ProgramStatsResponse getProgramStats(UUID programId, UUID userId) {
         if (!programRepo.existsById(programId)) {
-            throw new AppException(ErrorCode.PROGRAM_NOT_FOUND);
+            throw new BusinessException(ErrorCode.PROGRAM_NOT_FOUND);
         }
 
         Double avgRating = ratingRepo.getAverageRating(programId);
@@ -416,10 +417,10 @@ public class WorkoutProgramServiceImpl implements WorkoutProgramService {
         }
 
         WorkoutProgram program = programRepo.findById(programId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND));
         
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         SavedProgram savedProgram = SavedProgram.builder()
                 .program(program)

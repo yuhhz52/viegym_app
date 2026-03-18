@@ -4,7 +4,7 @@ import com.example.viegymapp.dto.response.PaymentResponse;
 import com.example.viegymapp.entity.BookingSession;
 import com.example.viegymapp.entity.Enum.PaymentStatus;
 import com.example.viegymapp.entity.Payment;
-import com.example.viegymapp.exception.AppException;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.BookingSessionRepository;
 import com.example.viegymapp.repository.CoachTimeSlotRepository;
@@ -78,7 +78,7 @@ class PaymentServiceImplTest {
     void checkPaymentStatus_whenPaymentNotFound_shouldThrowAppException() {
         when(paymentRepository.findByOrderId("NOT_FOUND")).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> paymentService.checkPaymentStatus("NOT_FOUND"));
+        BusinessException ex = assertThrows(BusinessException.class, () -> paymentService.checkPaymentStatus("NOT_FOUND"));
 
         assertEquals(ErrorCode.PAYMENT_NOT_FOUND, ex.getErrorCode());
     }
@@ -103,7 +103,7 @@ class PaymentServiceImplTest {
         Payment payment = buildPayment(PaymentStatus.PENDING);
         when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
 
-        AppException ex = assertThrows(AppException.class, () -> paymentService.refundPayment(paymentId, "reason"));
+        BusinessException ex = assertThrows(BusinessException.class, () -> paymentService.refundPayment(paymentId, "reason"));
 
         assertEquals(ErrorCode.PAYMENT_NOT_COMPLETED, ex.getErrorCode());
         verify(coachBalanceService, never()).processRefund(payment, BigDecimal.ZERO, "reason");

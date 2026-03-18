@@ -6,6 +6,7 @@ import com.example.viegymapp.dto.response.ApiResponse;
 import com.example.viegymapp.dto.response.NotificationPreferenceResponse;
 import com.example.viegymapp.dto.response.NotificationResponse;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.UserRepository;
@@ -34,7 +35,7 @@ public class NotificationController {
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
     
     /**

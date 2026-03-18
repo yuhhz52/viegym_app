@@ -7,6 +7,7 @@ import com.example.viegymapp.entity.Payment;
 import com.example.viegymapp.entity.User;
 import com.example.viegymapp.entity.CoachTimeSlot;
 import com.example.viegymapp.entity.Enum.PaymentStatus;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.BookingSessionRepository;
@@ -59,14 +60,14 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse checkPaymentStatus(String orderId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
         return mapToPaymentResponse(payment);
     }
 
     @Override
     public PaymentResponse getPaymentByBookingSession(UUID bookingSessionId) {
         Payment payment = paymentRepository.findByBookingSessionId(bookingSessionId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
         return mapToPaymentResponse(payment);
     }
 
@@ -82,10 +83,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentResponse refundPayment(UUID paymentId, String reason) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (payment.getStatus() != PaymentStatus.COMPLETED) {
-            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED);
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_COMPLETED);
         }
 
         // Calculate refund amount using RefundPolicyService
@@ -123,24 +124,24 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("=== CREATE VNPAY PAYMENT ===");
         
         BookingSession bookingSession = bookingSessionRepository.findById(request.getBookingSessionId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
         if (!bookingSession.getClient().getId().equals(userId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         // Validate booking is PENDING (not expired or already confirmed)
         if (bookingSession.getStatus() != BookingSession.BookingStatus.PENDING) {
-            throw new AppException(ErrorCode.BOOKING_NOT_FOUND);
+            throw new BusinessException(ErrorCode.BOOKING_NOT_FOUND);
         }
         
         // Check if booking has expired
         if (bookingSession.getExpiredAt() != null && bookingSession.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.BOOKING_NOT_FOUND);
+            throw new BusinessException(ErrorCode.BOOKING_NOT_FOUND);
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         String orderId = "VIEGYM_" + System.currentTimeMillis();
         
@@ -222,7 +223,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             if (!calculatedHash.equals(vnpSecureHash)) {
                 log.error("Invalid VNPay signature");
-                throw new AppException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+                throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
             }
 
             String orderId = params.get("vnp_TxnRef");
@@ -230,7 +231,7 @@ public class PaymentServiceImpl implements PaymentService {
             String transactionId = params.get("vnp_TransactionNo");
 
             Payment payment = paymentRepository.findByOrderId(orderId)
-                    .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
             if ("00".equals(responseCode)) {
                 payment.setStatus(PaymentStatus.COMPLETED);
@@ -300,7 +301,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw e;
         } catch (Exception e) {
             log.error("Error handling VNPay callback", e);
-            throw new AppException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            throw new BusinessException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
     }
 

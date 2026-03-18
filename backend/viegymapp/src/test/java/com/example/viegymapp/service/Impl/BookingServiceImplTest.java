@@ -8,7 +8,7 @@ import com.example.viegymapp.entity.Enum.PaymentStatus;
 import com.example.viegymapp.entity.Notification;
 import com.example.viegymapp.entity.Payment;
 import com.example.viegymapp.entity.User;
-import com.example.viegymapp.exception.AppException;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.BookingMapper;
 import com.example.viegymapp.mapper.TimeSlotMapper;
@@ -186,7 +186,7 @@ class BookingServiceImplTest {
         when(userRepository.findByEmail("client@test.com")).thenReturn(Optional.of(client));
         when(bookingRepository.countByClientAndCreatedAtAfter(eq(client), any(OffsetDateTime.class))).thenReturn(5L);
 
-        AppException ex = assertThrows(AppException.class, () -> bookingService.createBooking(request));
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.createBooking(request));
 
         assertEquals(ErrorCode.TOO_MANY_BOOKINGS, ex.getErrorCode());
         verify(timeSlotRepository, never()).findById(any(UUID.class));
@@ -216,7 +216,7 @@ class BookingServiceImplTest {
         when(timeSlotRepository.findById(slotId)).thenReturn(Optional.of(slot));
         when(userRepository.findById(anotherCoachId)).thenReturn(Optional.of(anotherCoach));
 
-        AppException ex = assertThrows(AppException.class, () -> bookingService.createBooking(request));
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.createBooking(request));
 
         assertEquals(ErrorCode.INVALID_COACH_FOR_SLOT, ex.getErrorCode());
     }
@@ -243,7 +243,7 @@ class BookingServiceImplTest {
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
         when(paymentRepository.findByBookingSessionId(bookingId)).thenReturn(Optional.of(payment));
 
-        AppException ex = assertThrows(AppException.class, () -> bookingService.cancelBooking(bookingId));
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.cancelBooking(bookingId));
 
         assertEquals(ErrorCode.CANNOT_CANCEL_PAID_BOOKING, ex.getErrorCode());
         verify(bookingRepository, never()).save(any(BookingSession.class));

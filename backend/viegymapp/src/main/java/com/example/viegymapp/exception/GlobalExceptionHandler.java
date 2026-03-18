@@ -40,25 +40,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
     }
 
-    //Bắt toàn bộ exception chưa xử lý
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> handlingException(Exception exception) {
-        log.error("Exception: ", exception);
-        ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
-
-        return ResponseEntity.badRequest().body(apiResponse);
-    }
-
-    @ExceptionHandler(AppException.class)
-    public ResponseEntity<ApiResponse> handlingAppException(AppException exception) {
+    // Lỗi nghiệp vụ (business/domain)
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse> handlingBusinessException(BusinessException exception) {
         ErrorCode errorCode = exception.getErrorCode();
         ApiResponse apiResponse = ApiResponse.builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .build();
         return ResponseEntity.status(errorCode.getStatusCode()).body(apiResponse);
+    }
+
+    // Lỗi hệ thống có kiểm soát
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<ApiResponse> handlingAppException(AppException exception) {
+        log.error("System exception", exception);
+        ErrorCode errorCode = ErrorCode.UNCATEGORIZED_EXCEPTION;
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+    }
+
+    //Bắt toàn bộ exception chưa xử lý
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handlingException(Exception exception) {
+        log.error("Unhandled exception", exception);
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode())
+                .message(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
     }
 
     //Dùng khi user không đủ quyền truy cập (403 Forbidden)

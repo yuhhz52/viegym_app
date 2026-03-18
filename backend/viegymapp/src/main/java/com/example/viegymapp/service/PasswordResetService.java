@@ -2,6 +2,7 @@ package com.example.viegymapp.service;
 
 import com.example.viegymapp.entity.PasswordResetToken;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.PasswordResetTokenRepository;
@@ -30,13 +31,13 @@ public class PasswordResetService {
     @Transactional
     public void createPasswordResetToken(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         // Kiểm tra xem có token chưa hết hạn và chưa sử dụng không
         Instant now = Instant.now();
         passwordResetTokenRepository.findByUserAndIsUsedFalseAndExpiryDateAfter(user, now)
                 .ifPresent(existingToken -> {
-                    throw new AppException(ErrorCode.TOO_MANY_RESET_REQUESTS);
+                    throw new BusinessException(ErrorCode.TOO_MANY_RESET_REQUESTS);
                 });
         
         // Xóa các token cũ đã hết hạn hoặc đã sử dụng của user
@@ -73,16 +74,16 @@ public class PasswordResetService {
     @Transactional
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
         
         // Kiểm tra token đã hết hạn chưa
         if (resetToken.isExpired()) {
-            throw new AppException(ErrorCode.TOKEN_EXPIRED);
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
         
         // Kiểm tra token đã được sử dụng chưa
         if (resetToken.isUsed()) {
-            throw new AppException(ErrorCode.TOKEN_ALREADY_USED);
+            throw new BusinessException(ErrorCode.TOKEN_ALREADY_USED);
         }
         
         // Cập nhật mật khẩu mới

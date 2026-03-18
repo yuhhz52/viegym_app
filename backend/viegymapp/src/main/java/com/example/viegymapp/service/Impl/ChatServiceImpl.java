@@ -6,6 +6,7 @@ import com.example.viegymapp.dto.response.ChatMessageResponse;
 import com.example.viegymapp.entity.ChatMessage;
 import com.example.viegymapp.entity.Notification;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.ChatMessageMapper;
@@ -44,7 +45,7 @@ public class ChatServiceImpl implements ChatService {
         User sender = getCurrentUser();
         
         User receiver = userRepository.findById(request.getReceiverId())
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         ChatMessage message = messageMapper.toEntity(request);
         message.setSender(sender);
@@ -105,11 +106,11 @@ public class ChatServiceImpl implements ChatService {
         User currentUser = getCurrentUser();
         
         ChatMessage message = messageRepository.findById(messageId)
-            .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         
         // Only receiver can mark as read
         if (!message.getReceiver().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         message.setIsRead(true);
@@ -143,6 +144,6 @@ public class ChatServiceImpl implements ChatService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 }

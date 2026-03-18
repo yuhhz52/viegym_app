@@ -2,6 +2,7 @@ package com.example.viegymapp.service;
 
 import com.example.viegymapp.entity.RefreshToken;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.RefreshTokenRepository;
@@ -31,7 +32,7 @@ public class RefreshTokenService {
 
     public RefreshToken createRefreshToken(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
@@ -45,12 +46,12 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.isRevoked()) {
             refreshTokenRepository.delete(token);
-            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+            throw new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED);
         }
         
         if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
-            throw new AppException(ErrorCode.TOKEN_REFRESH_FAILED);
+            throw new BusinessException(ErrorCode.TOKEN_REFRESH_FAILED);
         }
         
         return token;
@@ -60,7 +61,7 @@ public class RefreshTokenService {
     public int deleteByUserId(UUID userId) {
         // Kiểm tra user có tồn tại không
         if (!userRepository.existsById(userId)) {
-            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+            throw new BusinessException(ErrorCode.USER_NOT_EXISTED);
         }
         return refreshTokenRepository.deleteByUserId(userId);
     }

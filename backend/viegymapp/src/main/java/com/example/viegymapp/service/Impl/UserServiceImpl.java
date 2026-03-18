@@ -8,6 +8,7 @@ import com.example.viegymapp.entity.Enum.UserStatus;
 import com.example.viegymapp.entity.Role;
 import com.example.viegymapp.entity.User;
 import com.example.viegymapp.entity.UserRole;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.UserMapper;
@@ -48,7 +49,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         return userMapper.toUserResponse(user);
     }
 
@@ -56,7 +57,7 @@ public class UserServiceImpl implements UserService {
     private User getCurrentUserEntity() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
     // ============ UPDATE PROFILE ============
@@ -76,16 +77,16 @@ public class UserServiceImpl implements UserService {
 
         // Validate file
         if (file.isEmpty()) {
-            throw new AppException(ErrorCode.FILE_EMPTY);
+            throw new BusinessException(ErrorCode.FILE_EMPTY);
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new AppException(ErrorCode.INVALID_FILE_TYPE);
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
 
         if (file.getSize() > 5 * 1024 * 1024) { // 5MB
-            throw new AppException(ErrorCode.FILE_TOO_LARGE);
+            throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
         }
 
         try {
@@ -149,7 +150,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
 
         User user = userMapper.toUser(request);
@@ -157,7 +158,7 @@ public class UserServiceImpl implements UserService {
         user.setStatus(UserStatus.ACTIVE);
 
         Role defaultRole = roleRepository.findByName(PredefinedRole.ROLE_USER)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         UserRole userRole = UserRole.builder()
                 .user(user)
@@ -189,7 +190,7 @@ public class UserServiceImpl implements UserService {
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new AppException(ErrorCode.EMAIL_ALREADY_USED);
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_USED);
             }
             user.setEmail(request.getEmail());
         }
@@ -205,11 +206,11 @@ public class UserServiceImpl implements UserService {
         
         // Prevent disabling yourself
         if (currentUser.getId().equals(userId)) {
-            throw new AppException(ErrorCode.CANNOT_DISABLE_SELF);
+            throw new BusinessException(ErrorCode.CANNOT_DISABLE_SELF);
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         // Check if user being disabled is an admin
         boolean isTargetAdmin = user.getUserRoles().stream()
@@ -221,7 +222,7 @@ public class UserServiceImpl implements UserService {
             boolean isSuperAdmin = currentUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getName() == PredefinedRole.ROLE_SUPER_ADMIN);
             if (!isSuperAdmin) {
-                throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION);
+                throw new BusinessException(ErrorCode.INSUFFICIENT_PERMISSION);
             }
         }
 
@@ -233,7 +234,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse enableUser(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         user.setStatus(UserStatus.ACTIVE);
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -242,7 +243,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUserById(UUID id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         userMapper.updateUser(user, request);
 
@@ -252,7 +253,7 @@ public class UserServiceImpl implements UserService {
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new AppException(ErrorCode.EMAIL_ALREADY_USED);
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_USED);
             }
             user.setEmail(request.getEmail());
         }
@@ -264,7 +265,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         return userMapper.toUserResponse(user);
     }
 
@@ -283,10 +284,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse assignRoleToUser(UUID userId, PredefinedRole roleName) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         User currentUser = getCurrentUserEntity();
 
@@ -295,7 +296,7 @@ public class UserServiceImpl implements UserService {
             boolean isSuperAdmin = currentUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getName() == PredefinedRole.ROLE_SUPER_ADMIN);
             if (!isSuperAdmin) {
-                throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION);
+                throw new BusinessException(ErrorCode.INSUFFICIENT_PERMISSION);
             }
         }
 
@@ -320,21 +321,21 @@ public class UserServiceImpl implements UserService {
         User currentUser = getCurrentUserEntity();
         
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         // Only SUPER_ADMIN can remove ADMIN or SUPER_ADMIN role
         if (roleName == PredefinedRole.ROLE_ADMIN || roleName == PredefinedRole.ROLE_SUPER_ADMIN) {
             boolean isSuperAdmin = currentUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getName() == PredefinedRole.ROLE_SUPER_ADMIN);
             if (!isSuperAdmin) {
-                throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION);
+                throw new BusinessException(ErrorCode.INSUFFICIENT_PERMISSION);
             }
         }
 
         UserRole userRoleToRemove = user.getUserRoles().stream()
                 .filter(ur -> ur.getRole().getName().equals(roleName))
                 .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         user.getUserRoles().remove(userRoleToRemove);
         userRoleRepository.delete(userRoleToRemove);
@@ -349,11 +350,11 @@ public class UserServiceImpl implements UserService {
         
         // Prevent deleting yourself
         if (currentUser.getId().equals(id)) {
-            throw new AppException(ErrorCode.CANNOT_DELETE_SELF);
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_SELF);
         }
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
 
         // Check if user being deleted is an admin
         boolean isTargetAdmin = user.getUserRoles().stream()
@@ -365,7 +366,7 @@ public class UserServiceImpl implements UserService {
             boolean isSuperAdmin = currentUser.getUserRoles().stream()
                     .anyMatch(ur -> ur.getRole().getName() == PredefinedRole.ROLE_SUPER_ADMIN);
             if (!isSuperAdmin) {
-                throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION);
+                throw new BusinessException(ErrorCode.INSUFFICIENT_PERMISSION);
             }
         }
 
@@ -445,7 +446,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUserStatus(UUID id, UserStatus status) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         user.setStatus(status);
         return userMapper.toUserResponse(userRepository.save(user));
     }

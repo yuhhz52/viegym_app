@@ -4,6 +4,7 @@ import com.example.viegymapp.dto.request.WorkoutSessionRequest;
 import com.example.viegymapp.dto.response.WorkoutSessionResponse;
 import com.example.viegymapp.entity.User;
 import com.example.viegymapp.entity.WorkoutSession;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.WorkoutSessionMapper;
@@ -40,7 +41,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
         if (request.getProgramId() != null) {
             session.setProgram(programRepo.findById(request.getProgramId())
-                    .orElseThrow(() -> new AppException(ErrorCode.PROGRAM_NOT_FOUND)));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PROGRAM_NOT_FOUND)));
         }
         
         WorkoutSession savedSession = sessionRepo.save(session);
@@ -78,13 +79,13 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     public WorkoutSessionResponse getSessionById(UUID id) {
         return sessionRepo.findById(id)
                 .map(workoutSessionMapper::toResponse)
-                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
     }
 
     @Override
     public WorkoutSessionResponse updateSession(UUID id, WorkoutSessionRequest request) {
         WorkoutSession session = sessionRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         var user = getCurrentUser();
         
@@ -108,11 +109,11 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Override
     public void deleteSession(UUID id) {
         var session = sessionRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
         var user = getCurrentUser();
         if (!session.getUser().getId().equals(user.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
         try {
@@ -141,7 +142,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
     @Override

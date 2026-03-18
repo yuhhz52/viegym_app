@@ -4,6 +4,7 @@ import com.example.viegymapp.dto.request.NutritionLogRequest;
 import com.example.viegymapp.dto.response.NutritionLogResponse;
 import com.example.viegymapp.entity.NutritionLog;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.NutritionLogMapper;
@@ -50,7 +51,7 @@ public class NutritionLogServiceImpl implements NutritionLogService {
     @Override
     public NutritionLogResponse updateLog(UUID id, NutritionLogRequest request) {
         NutritionLog log = nutritionLogRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.LOG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOG_NOT_FOUND));
 
         nutritionLogMapper.updateEntityFromRequest(request, log);
         return nutritionLogMapper.toResponse(nutritionLogRepository.save(log));
@@ -59,7 +60,7 @@ public class NutritionLogServiceImpl implements NutritionLogService {
     @Override
     public void deleteLog(UUID id) {
         if (!nutritionLogRepository.existsById(id)) {
-            throw new AppException(ErrorCode.LOG_NOT_FOUND);
+            throw new BusinessException(ErrorCode.LOG_NOT_FOUND);
         }
         nutritionLogRepository.deleteById(id);
     }
@@ -67,7 +68,7 @@ public class NutritionLogServiceImpl implements NutritionLogService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
 }

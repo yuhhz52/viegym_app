@@ -6,6 +6,7 @@ import com.example.viegymapp.dto.response.CommunityPostResponse;
 import com.example.viegymapp.dto.response.PostCommentResponse;
 import com.example.viegymapp.dto.response.PostLikeResponse;
 import com.example.viegymapp.entity.*;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.CommunityMapper;
@@ -63,7 +64,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public CommunityPostResponse getPostById(UUID id) {
         CommunityPost post = postRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         User currentUser = getCurrentUserOrNull();
         return mapper.toResponse(post, currentUser);
     }
@@ -106,7 +107,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public CommunityPostResponse updatePost(UUID id, CommunityPostRequest request) {
         CommunityPost post = postRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
@@ -135,7 +136,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public void deletePost(UUID id) {
         CommunityPost post = postRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         mediaRepo.deleteAll(post.getMedia());
         commentRepo.deleteAll(post.getComments());
         likeRepo.deleteAll(post.getLikes());
@@ -153,7 +154,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public PostCommentResponse addComment(UUID postId, PostCommentRequest request) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         PostComment comment = mapper.toEntity(request);
         comment.setPost(post);
@@ -164,7 +165,7 @@ public class CommunityServiceImpl implements CommunityService {
 
         if (request.getParentCommentId() != null) {
             PostComment parent = commentRepo.findById(request.getParentCommentId())
-                    .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
             comment.setParentComment(parent);
         }
 
@@ -174,7 +175,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public List<PostCommentResponse> getCommentsByPost(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         return post.getComments().stream()
                 .filter(c -> c.getParentComment() == null) // chỉ lấy comment gốc
@@ -193,7 +194,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public void deleteComment(UUID commentId) {
         PostComment comment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
         commentRepo.delete(comment);
     }
 
@@ -208,7 +209,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public PostLikeResponse likePost(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         User user = getCurrentUser();
 
@@ -275,7 +276,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public PostLikeResponse unlikePost(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         User user = getCurrentUser();
 
@@ -303,7 +304,7 @@ public class CommunityServiceImpl implements CommunityService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepo.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
     private User getCurrentUserOrNull() {
@@ -318,13 +319,13 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public void reportPost(UUID postId, com.example.viegymapp.dto.request.PostReportRequest request) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         
         User reporter = getCurrentUser();
         
         // Check if user already reported this post
         if (reportRepo.existsByPostAndReporter(post, reporter)) {
-            throw new AppException(ErrorCode.ALREADY_REPORTED);
+            throw new BusinessException(ErrorCode.ALREADY_REPORTED);
         }
         
         PostReport report = PostReport.builder()
@@ -345,7 +346,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public List<com.example.viegymapp.dto.response.PostReportResponse> getPostReports(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         
         return post.getReports().stream()
                 .map(report -> com.example.viegymapp.dto.response.PostReportResponse.builder()
@@ -366,7 +367,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Transactional
     public void clearPostReports(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         
         // Xóa tất cả reports của bài viết
         reportRepo.deleteByPost(post);
@@ -380,7 +381,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Transactional
     public CommunityPostResponse approvePost(UUID postId) {
         CommunityPost post = postRepo.findById(postId)
-                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
         
         post.setStatus("active");
         post = postRepo.save(post);

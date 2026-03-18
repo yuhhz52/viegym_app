@@ -3,6 +3,7 @@ package com.example.viegymapp.service.Impl;
 import com.example.viegymapp.dto.request.SessionExerciseLogRequest;
 import com.example.viegymapp.dto.response.SessionExerciseLogResponse;
 import com.example.viegymapp.entity.SessionExerciseLog;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.SessionExerciseLogMapper;
@@ -31,11 +32,11 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
         SessionExerciseLog sessionLog = sessionExerciseLogMapper.toEntity(request);
         
         var session = sessionRepo.findById(request.getSessionId())
-                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
         sessionLog.setSession(session);
         
         sessionLog.setExercise(exerciseRepo.findById(request.getExerciseId())
-                .orElseThrow(() -> new AppException(ErrorCode.EXERCISE_NOT_FOUND)));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EXERCISE_NOT_FOUND)));
         
         // Set default completed = false if not provided
         if (sessionLog.getCompleted() == null) {
@@ -65,7 +66,7 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
     @Override
     public SessionExerciseLogResponse updateLog(UUID id, SessionExerciseLogRequest request) {
         SessionExerciseLog log = logRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.LOG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOG_NOT_FOUND));
 
         // Tính volume cũ trước khi update
         double oldVolume = calculateLogVolume(log);
@@ -95,17 +96,17 @@ public class SessionExerciseLogServiceImpl implements SessionExerciseLogService 
     @Override
     public void deleteLog(UUID id) {
         SessionExerciseLog log = logRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.LOG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOG_NOT_FOUND));
         
         // Kiểm tra log đã bị xóa chưa (soft delete)
         if (log.getDeleted() != null && log.getDeleted()) {
-            throw new AppException(ErrorCode.LOG_NOT_FOUND);
+            throw new BusinessException(ErrorCode.LOG_NOT_FOUND);
         }
         
         // Kiểm tra session có tồn tại và chưa bị xóa không
         var session = log.getSession();
         if (session == null || (session.getDeleted() != null && session.getDeleted())) {
-            throw new AppException(ErrorCode.SESSION_NOT_FOUND);
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
         
         // Tính volume trước khi xóa

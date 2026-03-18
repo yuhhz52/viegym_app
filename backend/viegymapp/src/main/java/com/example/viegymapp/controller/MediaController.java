@@ -1,6 +1,7 @@
 package com.example.viegymapp.controller;
 
 import com.example.viegymapp.dto.response.ApiResponse;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.service.CloudinaryService;
@@ -27,19 +28,19 @@ public class MediaController {
     public ApiResponse<String> upload(@RequestParam("file") MultipartFile file) throws IOException {
         // Validate file không null hoặc empty
         if (file == null || file.isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_PARAMETER);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_PARAMETER);
         }
 
         // Validate file size
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new AppException(ErrorCode.FILE_TOO_LARGE);
+            throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
         }
 
         // Validate file type
         String contentType = file.getContentType();
         if (contentType == null || 
             (!isAllowedImageType(contentType) && !isAllowedVideoType(contentType))) {
-            throw new AppException(ErrorCode.INVALID_FILE_TYPE);
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
 
         String url = cloudinaryService.uploadFile(file);

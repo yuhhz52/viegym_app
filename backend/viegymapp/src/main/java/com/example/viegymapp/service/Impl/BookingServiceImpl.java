@@ -10,6 +10,7 @@ import com.example.viegymapp.entity.CoachTimeSlot;
 import com.example.viegymapp.entity.Notification;
 import com.example.viegymapp.entity.User;
 import com.example.viegymapp.entity.Enum.PredefinedRole;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.mapper.BookingMapper;
@@ -68,7 +69,7 @@ public class BookingServiceImpl implements BookingService {
         boolean isCoach = currentUser.getUserRoles().stream()
             .anyMatch(userRole -> userRole.getRole().getName() == PredefinedRole.ROLE_COACH);
         if (!isCoach) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         // Check for overlapping time slots
         boolean hasOverlap = timeSlotRepository.existsOverlappingSlot(
@@ -77,7 +78,7 @@ public class BookingServiceImpl implements BookingService {
             request.getEndTime()
         );
         if (hasOverlap) {
-            throw new AppException(ErrorCode.TIMESLOT_OVERLAPS);
+            throw new BusinessException(ErrorCode.TIMESLOT_OVERLAPS);
         }
         CoachTimeSlot timeSlot = timeSlotMapper.toEntity(request);
         timeSlot.setCoach(currentUser);
@@ -123,11 +124,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUser();
         
         CoachTimeSlot timeSlot = timeSlotRepository.findById(slotId)
-            .orElseThrow(() -> new AppException(ErrorCode.TIMESLOT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.TIMESLOT_NOT_FOUND));
         
         // Verify ownership
         if (!timeSlot.getCoach().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         // Check for overlapping time slots (excluding current slot)
@@ -139,7 +140,7 @@ public class BookingServiceImpl implements BookingService {
         );
         
         if (hasOverlap) {
-            throw new AppException(ErrorCode.TIMESLOT_OVERLAPS);
+            throw new BusinessException(ErrorCode.TIMESLOT_OVERLAPS);
         }
         
         timeSlotMapper.updateEntity(request, timeSlot);
@@ -152,11 +153,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUser();
         
         CoachTimeSlot timeSlot = timeSlotRepository.findById(slotId)
-            .orElseThrow(() -> new AppException(ErrorCode.TIMESLOT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.TIMESLOT_NOT_FOUND));
         
         // Verify ownership
         if (!timeSlot.getCoach().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         // Check if there are any active bookings for this slot
@@ -164,7 +165,7 @@ public class BookingServiceImpl implements BookingService {
         
         if (hasActiveBookings) {
             // Cannot delete slot with existing bookings
-            throw new AppException(ErrorCode.SLOT_HAS_BOOKINGS);
+            throw new BusinessException(ErrorCode.SLOT_HAS_BOOKINGS);
         }
         
         // Safe to delete - no active bookings exist
@@ -180,41 +181,41 @@ public class BookingServiceImpl implements BookingService {
         OffsetDateTime tenMinutesAgo = OffsetDateTime.now().minusMinutes(10);
         long recentBookings = bookingRepository.countByClientAndCreatedAtAfter(currentUser, tenMinutesAgo);
         if (recentBookings >= 5) {
-            throw new AppException(ErrorCode.TOO_MANY_BOOKINGS);
+            throw new BusinessException(ErrorCode.TOO_MANY_BOOKINGS);
         }
         
         // Get time slot
         CoachTimeSlot timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
-            .orElseThrow(() -> new AppException(ErrorCode.TIMESLOT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.TIMESLOT_NOT_FOUND));
         
         // Check slot availability
         if (timeSlot.getStatus() != CoachTimeSlot.SlotStatus.AVAILABLE) {
-            throw new AppException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
+            throw new BusinessException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
         }
         
         // Check if slot has capacity (not full)
         // Only count CONFIRMED bookings toward capacity
         if (timeSlot.getBookedCount() >= timeSlot.getCapacity()) {
-            throw new AppException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
+            throw new BusinessException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
         }
         
         // Check slot start time is in future
         if (timeSlot.getStartTime().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
+            throw new BusinessException(ErrorCode.TIMESLOT_NOT_AVAILABLE);
         }
         
         // Get coach
         User coach = userRepository.findById(request.getCoachId())
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         
         // Validate coach matches time slot's coach
         if (!timeSlot.getCoach().getId().equals(coach.getId())) {
-            throw new AppException(ErrorCode.INVALID_COACH_FOR_SLOT);
+            throw new BusinessException(ErrorCode.INVALID_COACH_FOR_SLOT);
         }
         
         // Prevent coach from booking themselves
         if (coach.getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.CANNOT_BOOK_SELF);
+            throw new BusinessException(ErrorCode.CANNOT_BOOK_SELF);
         }
         
         // Create booking with PENDING status
@@ -276,12 +277,12 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUser();
         
         BookingSession booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
         
         // Verify user is coach or client of this booking
         if (!booking.getCoach().getId().equals(currentUser.getId()) && 
             !booking.getClient().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         return bookingMapper.toResponse(booking);
@@ -292,11 +293,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUser();
         
         BookingSession booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
         
         // Only coach can confirm
         if (!booking.getCoach().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         booking.setStatus(BookingSession.BookingStatus.CONFIRMED);
@@ -315,16 +316,16 @@ public class BookingServiceImpl implements BookingService {
             oneHourAgo
         );
         if (recentCancellations >= 10) {
-            throw new AppException(ErrorCode.TOO_MANY_CANCELLATIONS);
+            throw new BusinessException(ErrorCode.TOO_MANY_CANCELLATIONS);
         }
         
         BookingSession booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
         
         // Both coach and client can cancel
         if (!booking.getCoach().getId().equals(currentUser.getId()) && 
             !booking.getClient().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         // Check if booking has been paid
@@ -338,7 +339,7 @@ public class BookingServiceImpl implements BookingService {
             if (payment.getStatus() == PaymentStatus.COMPLETED) {
                 // Coach CANNOT cancel paid bookings - must be refunded by admin or have valid reason
                 if (isCoachCancelling) {
-                    throw new AppException(ErrorCode.CANNOT_CANCEL_PAID_BOOKING);
+                    throw new BusinessException(ErrorCode.CANNOT_CANCEL_PAID_BOOKING);
                 }
                 
                 // Client can cancel - calculate refund based on timing
@@ -414,11 +415,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUser();
         
         BookingSession booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
         
         // Only coach can complete
         if (!booking.getCoach().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         
         booking.setStatus(BookingSession.BookingStatus.COMPLETED);
@@ -499,6 +500,6 @@ public class BookingServiceImpl implements BookingService {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 }

@@ -3,6 +3,7 @@ package com.example.viegymapp.controller;
 import com.example.viegymapp.dto.request.*;
 import com.example.viegymapp.dto.response.*;
 import com.example.viegymapp.entity.User;
+import com.example.viegymapp.exception.BusinessException;
 import com.example.viegymapp.exception.AppException;
 import com.example.viegymapp.exception.ErrorCode;
 import com.example.viegymapp.repository.UserRepository;
@@ -28,7 +29,7 @@ public class WorkoutProgramController {
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
     }
 
     @GetMapping
